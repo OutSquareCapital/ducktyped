@@ -1,7 +1,15 @@
 from dataclasses import dataclass
 from ducktyped.enums import Types
-from ducktyped.expressions import DuckType
 
+@dataclass(slots=True)
+class DuckType:
+    nullable: bool = True
+
+    def __str__(self) -> str:
+        raise NotImplementedError
+
+    def to_sql(self) -> str:
+        return str(self)
 
 @dataclass(slots=True)
 class Varchar(DuckType):

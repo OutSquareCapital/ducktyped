@@ -1,27 +1,12 @@
 from dataclasses import dataclass
 from typing import Any, Self
 from ducktyped.enums import KeyWord, Operators, Functions
+from ducktyped.types import DuckType
 
 
 class Expr:
     def to_sql(self) -> str:
         raise NotImplementedError()
-
-
-@dataclass(slots=True)
-class DuckType:
-    nullable: bool = True
-
-    def __str__(self) -> str:
-        raise NotImplementedError
-
-    def to_sql(self) -> str:
-        return str(self)
-
-    def cast_from(self, expr: Any) -> "CastExpr":
-        if not isinstance(expr, Expr):
-            expr = LiteralExpr(value=expr)
-        return CastExpr(expr=expr, target_type=self)
 
 
 @dataclass(slots=True)
