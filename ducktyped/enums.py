@@ -1,5 +1,6 @@
 from enum import StrEnum, auto
 
+
 class KeyWord(StrEnum):
     SELECT = "SELECT"
     FROM = "FROM"
@@ -10,6 +11,12 @@ class KeyWord(StrEnum):
     CAST = "CAST"
     AS = "AS"
     OR = "OR"
+    LEAST = "LEAST"
+    GREATEST = "GREATEST"
+    PRECEDING = "PRECEDING"
+    CURRENT = "CURRENT"
+    BETWEEN = "BETWEEN"
+
 
 class Operators(StrEnum):
     ADD = "+"
@@ -23,6 +30,7 @@ class Operators(StrEnum):
     EQ = "="
     NEQ = "!="
 
+
 class Types(StrEnum):
     VARCHAR = "VARCHAR"
     INTEGER = "INTEGER"
@@ -31,6 +39,7 @@ class Types(StrEnum):
     BOOLEAN = "BOOLEAN"
     DECIMAL = "DECIMAL"
     DATE = "DATE"
+
 
 class Functions(StrEnum):
     AVG = auto()
@@ -42,3 +51,6 @@ class Functions(StrEnum):
     KURTOSIS = auto()
     SKEWNESS = auto()
     STDDEV_SAMP = auto()
+    ABS = auto()
+    SIGN = auto()
+    SQRT = auto()

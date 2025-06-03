@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from typing import Any
-from ducktyped.enums import KeyWord, Operators, Functions
+
+from ducktyped.enums import Functions, KeyWord, Operators
 from ducktyped.types import DuckType
+
 
 def _wrap_value(value: Any) -> "Expr":
     if isinstance(value, Expr):
@@ -14,39 +16,69 @@ class Expr:
         raise NotImplementedError()
 
     def cast(self, type: DuckType) -> "CastExpr":
-        """Cast this expression to the specified type"""
         return CastExpr(_expr=self, _target_type=type)
-    
-    def add(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
-        return BinaryOpExpr(_left=self, _op=Operators.ADD, _right=_wrap_value(value=other))
-    
-    def sub(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
-        return BinaryOpExpr(_left=self, _op=Operators.SUBTRACT, _right=_wrap_value(value=other))
-    
-    def mul(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
-        return BinaryOpExpr(_left=self, _op=Operators.MULTIPLY, _right=_wrap_value(value=other))
-    
-    def div(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
-        return BinaryOpExpr(_left=self, _op=Operators.DIVIDE, _right=_wrap_value(value=other))
-    
-    def gt(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
-        return BinaryOpExpr(_left=self, _op=Operators.GT, _right=_wrap_value(value=other))
-    
-    def lt(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
-        return BinaryOpExpr(_left=self, _op=Operators.LT, _right=_wrap_value(value=other))
-    
-    def gte(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
-        return BinaryOpExpr(_left=self, _op=Operators.GTE, _right=_wrap_value(value=other))
-    
-    def lte(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
-        return BinaryOpExpr(_left=self, _op=Operators.LTE, _right=_wrap_value(value=other))
-    
-    def eq(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
-        return BinaryOpExpr(_left=self, _op=Operators.EQ, _right=_wrap_value(value=other))
-    
-    def neq(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
-        return BinaryOpExpr(_left=self, _op=Operators.NEQ, _right=_wrap_value(value=other))
 
+    def add(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(
+            _left=self, _op=Operators.ADD, _right=_wrap_value(value=other)
+        )
+
+    def sub(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(
+            _left=self, _op=Operators.SUBTRACT, _right=_wrap_value(value=other)
+        )
+
+    def mul(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(
+            _left=self, _op=Operators.MULTIPLY, _right=_wrap_value(value=other)
+        )
+
+    def div(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(
+            _left=self, _op=Operators.DIVIDE, _right=_wrap_value(value=other)
+        )
+
+    def gt(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(
+            _left=self, _op=Operators.GT, _right=_wrap_value(value=other)
+        )
+
+    def lt(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(
+            _left=self, _op=Operators.LT, _right=_wrap_value(value=other)
+        )
+
+    def gte(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(
+            _left=self, _op=Operators.GTE, _right=_wrap_value(value=other)
+        )
+
+    def lte(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(
+            _left=self, _op=Operators.LTE, _right=_wrap_value(value=other)
+        )
+
+    def eq(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(
+            _left=self, _op=Operators.EQ, _right=_wrap_value(value=other)
+        )
+
+    def neq(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(
+            _left=self, _op=Operators.NEQ, _right=_wrap_value(value=other)
+        )
+
+    def sqrt(self) -> "UnaryFuncExpr":
+        return UnaryFuncExpr(_func=Functions.SQRT, _expr=self)
+
+    def abs(self) -> "UnaryFuncExpr":
+        return UnaryFuncExpr(_func=Functions.ABS, _expr=self)
+
+    def sign(self) -> "UnaryFuncExpr":
+        return UnaryFuncExpr(_func=Functions.SIGN, _expr=self)
+
+    def clip(self, min_val: int | float, max_val: int | float) -> "ClipExpr":
+        return ClipExpr(_expr=self, _min_val=min_val, _max_val=max_val)
 
 
 @dataclass(slots=True)
@@ -62,11 +94,19 @@ class CastExpr(Expr):
 class LiteralExpr(Expr):
     _value: Any
 
-
     def to_sql(self) -> str:
         if isinstance(self._value, str):
             return f"'{self._value}'"
         return str(self._value)
+
+
+@dataclass(slots=True)
+class UnaryFuncExpr(Expr):
+    _func: str
+    _expr: Expr
+
+    def to_sql(self) -> str:
+        return f"{self._func}({self._expr.to_sql()})"
 
 
 @dataclass(slots=True)
@@ -77,6 +117,18 @@ class BinaryOpExpr(Expr):
 
     def to_sql(self) -> str:
         return f"({self._left.to_sql()} {self._op} {self._right.to_sql()})"
+
+
+@dataclass(slots=True)
+class ClipExpr(Expr):
+    _expr: Expr
+    _min_val: float | int
+    _max_val: float | int
+
+    def to_sql(self) -> str:
+        min_expr: str = _wrap_value(value=self._min_val).to_sql()
+        max_expr: str = _wrap_value(value=self._max_val).to_sql()
+        return f"{KeyWord.LEAST}({KeyWord.GREATEST}({self._expr.to_sql()}, {min_expr}), {max_expr})"
 
 
 @dataclass(slots=True)
@@ -126,7 +178,7 @@ class WindowExpr(Expr):
     def to_sql(self) -> str:
         return (
             f"{self.func}({self.col.name}) {KeyWord.OVER} ({KeyWord.ORDER_BY} {self.order_by.name} "
-            f"ROWS BETWEEN {self.window} PRECEDING AND CURRENT ROW)"
+            f"ROWS {KeyWord.BETWEEN} {self.window} {KeyWord.PRECEDING} {KeyWord.AND} {KeyWord.CURRENT} ROW)"
         )
 
 

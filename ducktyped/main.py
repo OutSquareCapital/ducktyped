@@ -1,11 +1,13 @@
 from dataclasses import dataclass
-from typing import Self
 from pathlib import Path
-from ducktyped.types import DuckType
-from ducktyped.enums import KeyWord
-from ducktyped.expressions import Expr, Col, AllExpr
+from typing import Self
+
 import duckdb
 import polars as pl
+
+from ducktyped.enums import KeyWord
+from ducktyped.expressions import AllExpr, Col, Expr
+from ducktyped.types import DuckType
 
 
 def col(name: str) -> Col:
