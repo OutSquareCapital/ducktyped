@@ -15,6 +15,9 @@ class Expr:
     def to_sql(self) -> str:
         raise NotImplementedError()
 
+    def alias(self, name: str) -> "AliasExpr":
+        return AliasExpr(_expr=self, _alias=name)
+
     def cast(self, type: DuckType) -> "CastExpr":
         return CastExpr(_expr=self, _target_type=type)
 
@@ -82,6 +85,15 @@ class Expr:
 
 
 @dataclass(slots=True)
+class AliasExpr(Expr):
+    _expr: Expr
+    _alias: str
+
+    def to_sql(self) -> str:
+        return f"{self._expr.to_sql()} AS {self._alias}"
+
+
+@dataclass(slots=True)
 class CastExpr(Expr):
     _expr: Expr
     _target_type: DuckType
@@ -139,28 +151,31 @@ class Col(Expr):
         return self.name
 
     def rolling_mean(self, window: int) -> "RollingExprBuilder":
-        return RollingExprBuilder(col=self, func=Functions.AVG, window=window)
+        return RollingExprBuilder(_col=self, _func=Functions.AVG, _window=window)
 
     def rolling_median(self, window: int) -> "RollingExprBuilder":
-        return RollingExprBuilder(col=self, func=Functions.MEDIAN, window=window)
+        return RollingExprBuilder(_col=self, _func=Functions.MEDIAN, _window=window)
 
     def rolling_sum(self, window: int) -> "RollingExprBuilder":
-        return RollingExprBuilder(col=self, func=Functions.SUM, window=window)
+        return RollingExprBuilder(_col=self, _func=Functions.SUM, _window=window)
 
     def rolling_max(self, window: int) -> "RollingExprBuilder":
-        return RollingExprBuilder(col=self, func=Functions.MAX, window=window)
+        return RollingExprBuilder(_col=self, _func=Functions.MAX, _window=window)
 
     def rolling_min(self, window: int) -> "RollingExprBuilder":
-        return RollingExprBuilder(col=self, func=Functions.MIN, window=window)
+        return RollingExprBuilder(_col=self, _func=Functions.MIN, _window=window)
 
     def rolling_kurtosis(self, window: int) -> "RollingExprBuilder":
-        return RollingExprBuilder(col=self, func=Functions.KURTOSIS, window=window)
+        return RollingExprBuilder(_col=self, _func=Functions.KURTOSIS, _window=window)
 
     def rolling_skew(self, window: int) -> "RollingExprBuilder":
-        return RollingExprBuilder(col=self, func=Functions.SKEWNESS, window=window)
+        return RollingExprBuilder(_col=self, _func=Functions.SKEWNESS, _window=window)
 
-    def rolling_stddev(self, window: int) -> "RollingExprBuilder":
-        return RollingExprBuilder(col=self, func=Functions.STDDEV_SAMP, window=window)
+    def rolling_stdev(self, window: int) -> "RollingExprBuilder":
+        return RollingExprBuilder(
+            _col=self, _func=Functions.STDDEV_SAMP, _window=window
+        )
+
 
 @dataclass(slots=True)
 class AllExpr(Expr):
@@ -184,11 +199,11 @@ class WindowExpr(Expr):
 
 @dataclass(slots=True)
 class RollingExprBuilder:
-    col: Col
-    func: str
-    window: int
+    _col: Col
+    _func: str
+    _window: int
 
     def over(self, order_by: Col) -> WindowExpr:
         return WindowExpr(
-            func=self.func, col=self.col, window=self.window, order_by=order_by
+            func=self._func, col=self._col, window=self._window, order_by=order_by
         )

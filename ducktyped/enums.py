@@ -39,6 +39,7 @@ class Types(StrEnum):
     BOOLEAN = "BOOLEAN"
     DECIMAL = "DECIMAL"
     DATE = "DATE"
+    ENUM = "ENUM"
 
 
 class Functions(StrEnum):

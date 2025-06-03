@@ -5,8 +5,6 @@ from ducktyped.enums import Types
 
 @dataclass(slots=True)
 class DuckType:
-    nullable: bool = True
-
     def __str__(self) -> str:
         raise NotImplementedError
 
@@ -46,3 +44,12 @@ class Boolean(DuckType):
 class Date(DuckType):
     def __str__(self) -> str:
         return Types.DATE
+
+@dataclass(slots=True)
+class Enum(DuckType):
+    values: list[str]
+    
+    def __str__(self) -> str:
+        quoted_values: list[str] = [f"'{val}'" for val in self.values]
+        values_str: str = ", ".join(quoted_values)
+        return f"{Types.ENUM}({values_str})"
