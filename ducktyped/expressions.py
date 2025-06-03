@@ -18,8 +18,8 @@ class Expr:
     def alias(self, name: str) -> "AliasExpr":
         return AliasExpr(_expr=self, _alias=name)
 
-    def cast(self, type: DuckType) -> "CastExpr":
-        return CastExpr(_expr=self, _target_type=type)
+    def cast(self, dtype: DuckType) -> "CastExpr":
+        return CastExpr(_expr=self, _dtype=dtype)
 
     def add(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
         return BinaryOpExpr(
@@ -83,6 +83,27 @@ class Expr:
     def clip(self, min_val: int | float, max_val: int | float) -> "ClipExpr":
         return ClipExpr(_expr=self, _min_val=min_val, _max_val=max_val)
 
+    def sum(self) -> "AggExpr":
+        return AggExpr(_func=Functions.SUM, _expr=self)
+
+    def mean(self) -> "AggExpr":
+        return AggExpr(_func=Functions.AVG, _expr=self)
+
+    def count(self) -> "AggExpr":
+        return AggExpr(_func=Functions.COUNT, _expr=self)
+
+    def max(self) -> "AggExpr":
+        return AggExpr(_func=Functions.MAX, _expr=self)
+
+    def min(self) -> "AggExpr":
+        return AggExpr(_func=Functions.MIN, _expr=self)
+
+    def first(self) -> "AggExpr":
+        return AggExpr(_func=Functions.FIRST, _expr=self)
+
+    def last(self) -> "AggExpr":
+        return AggExpr(_func=Functions.LAST, _expr=self)
+
 
 @dataclass(slots=True)
 class AliasExpr(Expr):
@@ -96,10 +117,10 @@ class AliasExpr(Expr):
 @dataclass(slots=True)
 class CastExpr(Expr):
     _expr: Expr
-    _target_type: DuckType
+    _dtype: DuckType
 
     def to_sql(self) -> str:
-        return f"{KeyWord.CAST}({self._expr.to_sql()} {KeyWord.AS} {self._target_type.to_sql()})"
+        return f"{KeyWord.CAST}({self._expr.to_sql()} {KeyWord.AS} {self._dtype.to_sql()})"
 
 
 @dataclass(slots=True)
@@ -207,3 +228,12 @@ class RollingExprBuilder:
         return WindowExpr(
             func=self._func, col=self._col, window=self._window, order_by=order_by
         )
+
+
+@dataclass(slots=True)
+class AggExpr(Expr):
+    _func: str
+    _expr: Expr
+
+    def to_sql(self) -> str:
+        return f"{self._func}({self._expr.to_sql()})"

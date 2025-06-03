@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-
 from ducktyped.enums import Types
 
 
@@ -47,9 +46,9 @@ class Date(DuckType):
 
 @dataclass(slots=True)
 class Enum(DuckType):
-    values: list[str]
+    categories: list[str]
     
     def __str__(self) -> str:
-        quoted_values: list[str] = [f"'{val}'" for val in self.values]
+        quoted_values: list[str] = [f"'{val}'" for val in self.categories]
         values_str: str = ", ".join(quoted_values)
         return f"{Types.ENUM}({values_str})"

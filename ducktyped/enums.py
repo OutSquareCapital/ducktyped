@@ -1,10 +1,14 @@
 from enum import StrEnum, auto
 
 
-class KeyWord(StrEnum):
+class Context(StrEnum):
     SELECT = "SELECT"
-    FROM = "FROM"
     WHERE = "WHERE"
+    GROUP_BY = "GROUP BY"
+
+
+class KeyWord(StrEnum):
+    FROM = "FROM"
     OVER = "OVER"
     ORDER_BY = "ORDER BY"
     AND = "AND"
@@ -55,3 +59,5 @@ class Functions(StrEnum):
     ABS = auto()
     SIGN = auto()
     SQRT = auto()
+    FIRST = auto()
+    LAST = auto()
