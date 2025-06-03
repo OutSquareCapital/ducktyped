@@ -104,6 +104,9 @@ class Expr:
     def last(self) -> "AggExpr":
         return AggExpr(_func=Functions.LAST, _expr=self)
 
+    def is_in(self, *values: Any) -> "InExpr":
+        return InExpr(_expr=self, _values=list(values))
+    
 
 @dataclass(slots=True)
 class AliasExpr(Expr):
@@ -179,3 +182,13 @@ class AggExpr(Expr):
 
     def to_sql(self) -> str:
         return f"{self._func}({self._expr.to_sql()})"
+
+@dataclass(slots=True)
+class InExpr(Expr):
+    _expr: Expr
+    _values: list[Any]
+
+    def to_sql(self) -> str:
+        value_exprs: list[Expr] = [_wrap_value(v) for v in self._values]
+        values_str: str = ", ".join(v.to_sql() for v in value_exprs)
+        return f"{self._expr.to_sql()} {KeyWord.IN} ({values_str})"

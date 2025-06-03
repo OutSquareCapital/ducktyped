@@ -13,11 +13,9 @@ class Query:
     def __init__(
         self,
         table: Path,
-        selected: list[Expr] | None = None
+        selected: list[Expr]
     ) -> None:
         self._table: Path = table
-        if selected is None:
-            selected = []
         self._selected: list[Expr] = selected
         self._where_clause: list[Expr] = []
         self._group_by: list[Expr] = []
@@ -63,7 +61,7 @@ class Query:
         if self._order_by:
             order_parts: list[str] = []
             for expr, is_asc in self._order_by:
-                direction = "ASC" if is_asc else "DESC"
+                direction: KeyWord | KeyWord = KeyWord.ASC if is_asc else KeyWord.DESC
                 order_parts.append(f"{expr.to_sql()} {direction}")
             order_sql: str = f" {Context.ORDER_BY} " + ", ".join(order_parts)
         return f"{Context.SELECT} {select_sql} {Context.FROM} '{self._table}'{where_sql}{group_sql}{order_sql}"
@@ -96,7 +94,7 @@ class Query:
         if self._order_by:
             order_parts: list[str] = []
             for expr, is_asc in self._order_by:
-                direction = "ASC" if is_asc else "DESC"
+                direction: KeyWord | KeyWord = KeyWord.ASC if is_asc else KeyWord.DESC
                 order_parts.append(f"{expr.to_sql()} {direction}")
             order_sql: str = f"\n{Context.ORDER_BY}\n    " + ",\n    ".join(order_parts)
             query += order_sql

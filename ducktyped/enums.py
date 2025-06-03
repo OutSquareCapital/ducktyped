@@ -20,6 +20,9 @@ class KeyWord(StrEnum):
     PRECEDING = "PRECEDING"
     CURRENT = "CURRENT"
     BETWEEN = "BETWEEN"
+    IN = "IN"
+    ASC = "ASC"
+    DESC = "DESC"
 
 
 class Operators(StrEnum):
