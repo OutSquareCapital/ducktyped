@@ -1,39 +1,37 @@
-from enum import StrEnum
+from dataclasses import dataclass
+from ducktyped.enums import Types
+from ducktyped.expressions import DuckType
 
 
-class KeyWord(StrEnum):
-    SELECT = "SELECT"
-    FROM = "FROM"
-    WHERE = "WHERE"
-    OVER = "OVER"
-    ORDER_BY = "ORDER BY"
-    AND = "AND"
+@dataclass(slots=True)
+class Varchar(DuckType):
+    length: int | None = None
+
+    def __str__(self) -> str:
+        if self.length is not None:
+            return f"{Types.VARCHAR}({self.length})"
+        return Types.VARCHAR
 
 
-class Operators(StrEnum):
-    ADD = "+"
-    SUBTRACT = "-"
-    MULTIPLY = "*"
-    DIVIDE = "/"
-    GT = ">"
-    LT = "<"
-    GTE = ">="
-    LTE = "<="
-    EQ = "="
-    NEQ = "!="
+@dataclass(slots=True)
+class Integer(DuckType):
+    def __str__(self) -> str:
+        return Types.INTEGER
 
 
-class DuckType:
-    def __str__(self) -> str: ...
+@dataclass(slots=True)
+class Float(DuckType):
+    def __str__(self) -> str:
+        return Types.FLOAT
 
 
-class Varchar(DuckType): ...
+@dataclass(slots=True)
+class Boolean(DuckType):
+    def __str__(self) -> str:
+        return Types.BOOLEAN
 
 
-class Integer(DuckType): ...
-
-
-class Float(DuckType): ...
-
-
-class Timestamp(DuckType): ...
+@dataclass(slots=True)
+class Date(DuckType):
+    def __str__(self) -> str:
+        return Types.DATE
