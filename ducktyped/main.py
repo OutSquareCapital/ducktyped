@@ -5,15 +5,8 @@ import duckdb
 import polars as pl
 
 from ducktyped.enums import KeyWord, Context
-from ducktyped.expressions import AllExpr, Col, Expr
-
-
-def col(name: str) -> Col:
-    return Col(name=name)
-
-
-def all() -> AllExpr:
-    return AllExpr()
+from ducktyped.expressions import Expr
+from ducktyped.cols import Col, col
 
 
 @dataclass(slots=True)
@@ -22,10 +15,6 @@ class Table:
 
     def select(self, *cols: Col | Expr) -> "Query":
         return Query(table=self).select(*cols)
-
-
-    def filter(self, *conditions: Expr) -> "Query":
-        return self.select(all()).where(*conditions)
 
 class Query:
     __slots__ = ("_table", "_selected", "_where_clause", "_group_by")
