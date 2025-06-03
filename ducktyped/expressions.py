@@ -97,7 +97,7 @@ class Col(Expr):
         return CastExpr(expr=self, target_type=type)
 
 
-@dataclass
+@dataclass(slots=True)
 class AllExpr(Expr):
     def to_sql(self) -> str:
         return "*"

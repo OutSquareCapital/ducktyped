@@ -4,7 +4,8 @@ from pathlib import Path
 from ducktyped.types import DuckType
 from ducktyped.enums import KeyWord
 from ducktyped.expressions import Expr, Col, AllExpr
-
+import duckdb
+import polars as pl
 
 def col(name: str) -> Col:
     return Col(name=name)
@@ -24,13 +25,14 @@ class Table:
 
 
 class Query:
+    __slots__ = ("_table", "_selected", "_where_clause")
     def __init__(self, table: Table) -> None:
         self._table: Table = table
         self._selected: list[Expr] = []
         self._where_clause: list[Expr] = []
 
     def __repr__(self) -> str:
-        return f"{self.to_sql().splitlines()}"
+        return f"{self.__class__.__name__}:\n({self.to_sql()})"
 
     def select(self, *cols: Expr) -> Self:
         self._selected.extend(cols)
@@ -48,3 +50,11 @@ class Query:
                 cond.to_sql() for cond in self._where_clause
             )
         return f"{KeyWord.SELECT} {select_sql} {KeyWord.FROM} '{self._table.filepath}'{where_sql}"
+
+    def execute(self) -> pl.DataFrame:
+        conn: duckdb.DuckDBPyConnection = duckdb.connect(database=self._table.filepath) # type: ignore[call-arg]
+        try:
+            result: pl.DataFrame = conn.execute(query=self.to_sql()).pl()
+            return result
+        finally:
+            conn.close()
