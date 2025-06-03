@@ -1,121 +1,158 @@
 # DuckTyped
 
-DuckTyped est une bibliothèque Python qui fournit une API fluide et intuitive pour travailler avec DuckDB, inspirée par la syntaxe de Polars. Cette bibliothèque permet de construire des requêtes SQL de manière programmatique avec un style expressif et chainable.
+DuckTyped is a Python library providing a fluent and intuitive API for working with DuckDB, inspired by Polars syntax. This library allows you to build SQL queries programmatically with an expressive and chainable style.
 
-## Concepts de base
+## Core Concepts
 
-DuckTyped est construit autour de quelques concepts clés :
+DuckTyped is built around several key concepts:
 
-- **Table** : Représente une table DuckDB, liée à un fichier (Parquet, CSV, etc.)
-- **Query** : Représente une requête SQL en construction
-- **Expr** : Expressions qui peuvent être utilisées dans les requêtes (colonnes, opérations, etc.)
-- **DuckType** : Types de données utilisés dans DuckDB
+- **Query**: Represents a SQL query under construction
+- **Expr**: Expressions that can be used in queries (columns, operations, etc.)
+- **DuckType**: Data types used in DuckDB
+- **TABLE**: Represents a DuckDB table, linked to a file (Parquet, CSV, etc.)
 
-## Syntaxe de base
+## Basic Syntax
 
-### Définir une table
+### Using SELECT and FROM
 
 ```python
 import ducktyped as dk
 from pathlib import Path
 
-# Créer une référence à une table
-prices = dk.Table(
-    filepath="prices.parquet",
-    schema={
-        "date": dk.Float(),
-        "ticker": dk.Varchar(),
-        "close": dk.Float(),
-    },
-)
-```
+# Create a query with SELECT...FROM
+query = dk.SELECT(
+    dk.col.date,
+    dk.col.ticker,
+    dk.col.close
+).FROM(Path("prices.parquet"))
 
-### Construire une requête
-
-```python
-# Sélectionner des colonnes
-query = prices.select(
-    dk.col("date"),
-    dk.col("ticker"),
-    dk.col("close")
-)
-
-# Filtrer avec une condition
-query = prices.select(
-    dk.col("date"),
-    dk.col("ticker"),
-    dk.col("close")
-).where(
-    dk.col("ticker").eq("SPY")
-)
-
-# Exécuter la requête
+# Execute the query
 result = query.execute()
 ```
 
-### Expressions et opérations
+### Using TABLE for more concise syntax
 
 ```python
-# Opérations arithmétiques
-query = prices.select(
-    dk.col("date"),
-    dk.col("close"),
-    dk.col("close").add(1).alias("close_plus_one"),
-    dk.col("close").sub(dk.col("open")).div(dk.col("open")).mul(100).alias("pct_change")
+import ducktyped as dk
+from pathlib import Path
+
+# Create a table reference
+prices = dk.TABLE(name="prices", path=Path("prices.parquet"))
+
+# Create a query
+query = prices.SELECT(
+    dk.col.date,
+    dk.col.ticker,
+    dk.col.close
 )
 
-# Fonctions mathématiques
-query = prices.select(
-    dk.col("close"),
-    dk.col("close").sqrt().alias("sqrt_close"),
-    dk.col("returns").abs().alias("abs_returns"),
-    dk.col("volatility").clip(0, 1).alias("clipped_vol")
+# Filter with a condition
+query = prices.SELECT(
+    dk.col.date,
+    dk.col.ticker,
+    dk.col.close
+).WHERE(
+    dk.col.ticker.eq("SPY")
 )
 
-# Expressions conditionnelles
-query = prices.select(
-    dk.col("ticker"),
-    dk.col("close")
-).where(
-    dk.col("close").gt(100).add(dk.col("volume").gt(1000000))
+# Execute the query
+result = query.execute()
+```
+
+### Expressions and Operations
+
+```python
+# Arithmetic operations
+query = prices.SELECT(
+    dk.col.date,
+    dk.col.close,
+    dk.col.close.add(1).alias("close_plus_one"),
+    dk.col.close.sub(dk.col.open).div(dk.col.open).mul(100).alias("pct_change")
+)
+
+# Mathematical functions
+query = prices.SELECT(
+    dk.col.close,
+    dk.col.close.sqrt().alias("sqrt_close"),
+    dk.col.returns.abs().alias("abs_returns"),
+    dk.col.volatility.clip(0, 1).alias("clipped_vol")
+)
+
+# Conditional expressions
+query = prices.SELECT(
+    dk.col.ticker,
+    dk.col.close
+).WHERE(
+    dk.col.close.gt(100)
 )
 ```
 
-### Conversion de types (cast)
+### Type Casting
 
 ```python
-query = prices.select(
-    dk.col("date").cast(dk.Date()),
-    dk.col("ticker").cast(dk.Enum(values=["SPY", "AAPL", "GOOG"])),
-    dk.col("close").cast(dk.Float()).alias("close_float")
-)
-
-# Méthodes d'aide pour le cast
-query = prices.select(
-    dk.col("close").as_int(),
-    dk.col("date").as_date(),
-    dk.col("status").as_boolean()
+query = prices.SELECT(
+    dk.col.date.cast(dk.Date()),
+    dk.col.ticker.cast(dk.Varchar()),
+    dk.col.close.cast(dk.Float()).alias("close_float"),
+    dk.col.category.cast(dk.Enum(categories=["SPY", "AAPL", "GOOG"]))
 )
 ```
 
-### Fenêtres glissantes (rolling windows)
+### Rolling Windows
 
 ```python
-query = prices.select(
-    dk.col("date"),
-    dk.col("close"),
-    dk.col("close").rolling_mean(window=20).over(order_by=dk.col("date")).alias("ma20"),
-    dk.col("close").rolling_stddev(window=20).over(order_by=dk.col("date")).alias("std20")
+query = prices.SELECT(
+    dk.col.date,
+    dk.col.close,
+    dk.col.close.rolling_mean(20).over(dk.col.date).alias("ma20"),
+    dk.col.close.rolling_stdev(20).over(dk.col.date).alias("std20")
 )
 ```
 
-## Comparaison avec Polars
+### Aggregation Functions
 
-### Similitudes
+```python
+query = prices.SELECT(
+    dk.col.ticker,
+    dk.col.close.mean().alias("avg_close"),
+    dk.col.close.max().alias("max_close"),
+    dk.col.close.min().alias("min_close"),
+    dk.col.volume.sum().alias("total_volume")
+).GROUP_BY(
+    dk.col.ticker
+)
+```
 
-- **API fluide** : DuckTyped adopte l'approche de chaînage des méthodes comme Polars
-- **Expressions** : Utilise un système d'expressions similaire pour les opérations et transformations
-- **Lazy evaluation** : Les requêtes sont construites d'abord puis exécutées seulement quand nécessaire
+### Sorting Results
+
+```python
+query = prices.SELECT(
+    dk.col.date,
+    dk.col.ticker,
+    dk.col.close
+).ORDER_BY(
+    dk.col.date,
+    dk.col.ticker
+)
+
+# Descending order
+query = prices.SELECT(
+    dk.col.ticker,
+    dk.col.close.mean().alias("avg_close")
+).GROUP_BY(
+    dk.col.ticker
+).ORDER_BY(
+    dk.col("avg_close"), ascending=False
+)
+```
+
+## Comparison with Polars
+
+### Similarities
+
+- **Fluent API**: DuckTyped adopts the method chaining approach like Polars
+- **Expressions**: Uses a similar expression system for operations and transformations
+- **Lazy evaluation**: Queries are built first and executed only when necessary
 
 ```python
 # Polars
@@ -130,176 +167,132 @@ df = pl.scan_parquet("prices.parquet").select(
 
 # DuckTyped
 import ducktyped as dk
-prices = dk.Table("prices.parquet", schema={...})
-df = prices.select(
-    dk.col("date"),
-    dk.col("ticker"),
-    dk.col("close")
-).where(
-    dk.col("ticker").eq("SPY")
+from pathlib import Path
+prices = dk.TABLE("prices", Path("prices.parquet"))
+df = prices.SELECT(
+    dk.col.date,
+    dk.col.ticker,
+    dk.col.close
+).WHERE(
+    dk.col.ticker.eq("SPY")
 ).execute()
 ```
 
-### Différences
+### Differences
 
-- **Moteur sous-jacent** : DuckTyped utilise DuckDB alors que Polars a son propre moteur
-- **Définition de schéma** : DuckTyped nécessite une définition explicite du schéma
-- **Noms des méthodes** : Certaines méthodes ont des noms différents :
-  - `filter()` dans Polars vs `where()` dans DuckTyped
-  - `collect()` dans Polars vs `execute()` dans DuckTyped
-- **Opérations de comparaison** : Polars utilise des opérateurs Python (`==`, `>`, etc.) tandis que DuckTyped utilise des méthodes (`.eq()`, `.gt()`, etc.)
+- **Underlying Engine**: DuckTyped uses DuckDB while Polars has its own engine
+- **Comparison Operations**: Polars uses Python operators (`==`, `>`, etc.) while DuckTyped uses methods (`.eq()`, `.gt()`, etc.)
+- **Query Execution**: Polars uses `.collect()` while DuckTyped uses `.execute()`
+- **Method Names**: Different naming conventions:
+  - `filter()` in Polars vs `WHERE()` in DuckTyped
+  - `group_by()` in Polars vs `GROUP_BY()` in DuckTyped
 
-## Exemples complets
+## Complete Examples
 
-### Exemple 1 : Analyse de prix d'actions
+### Example 1: Stock Price Analysis
 
 ```python
 import ducktyped as dk
-import polars as pl
 from pathlib import Path
 
-# Définir une table
-prices = dk.Table(
-    filepath="prices.parquet",
-    schema={
-        "date": dk.Float(),
-        "ticker": dk.Varchar(),
-        "close": dk.Float(),
-        "volume": dk.Float(),
-    },
+# Define a table
+prices = dk.TABLE("prices", Path("prices.parquet"))
+
+# Build a complex query
+query = prices.SELECT(
+    dk.col.date,
+    dk.col.ticker,
+    dk.col.close,
+    dk.col.close.rolling_mean(20).over(dk.col.date).alias("ma20"),
+    dk.col.close.rolling_mean(50).over(dk.col.date).alias("ma50"),
+    dk.col.close.div(dk.col.close.rolling_mean(200).over(dk.col.date)).sub(1).mul(100).alias("pct_above_ma200")
+).WHERE(
+    dk.col.ticker.eq("SPY")
 )
 
-# Construire une requête complexe
-query = prices.select(
-    dk.col("date").cast(dk.Date()).alias("date"),
-    dk.col("ticker"),
-    dk.col("close"),
-    dk.col("close").rolling_mean(window=20).over(order_by=dk.col("date")).alias("ma20"),
-    dk.col("close").rolling_mean(window=50).over(order_by=dk.col("date")).alias("ma50"),
-    dk.col("close").div(dk.col("close").rolling_mean(window=200).over(order_by=dk.col("date"))).sub(1).mul(100).alias("pct_above_ma200")
-).where(
-    dk.col("ticker").eq("SPY")
-)
-
-# Afficher la requête SQL générée
+# Display generated SQL query
 print(query.explain())
 
-# Exécuter la requête et obtenir un DataFrame Polars
+# Execute query and get Polars DataFrame
 result = query.execute()
 print(result.head())
 ```
 
-### Exemple 2 : Transformations et formattage
+### Example 2: Transformations and Formatting
 
 ```python
 import ducktyped as dk
+from pathlib import Path
 
-# Créer une référence à une table
-sales = dk.Table(
-    filepath="sales.parquet",
-    schema={
-        "date": dk.Date(),
-        "product_id": dk.Integer(),
-        "category": dk.Varchar(),
-        "quantity": dk.Integer(),
-        "price": dk.Float(),
-    },
+# Create a table reference
+sales = dk.TABLE("sales", Path("sales.parquet"))
+
+# Query with multiple transformations
+query = sales.SELECT(
+    dk.col.date,
+    dk.col.category.cast(dk.Enum(categories=["Electronics", "Clothing", "Food"])).alias("category"),
+    dk.col.quantity,
+    dk.col.price,
+    dk.col.quantity.mul(dk.col.price).alias("total_sales"),
+    dk.col.quantity.mul(dk.col.price).rolling_sum(7).over(dk.col.date).alias("rolling_7day_sales")
+).WHERE(
+    dk.col.price.gt(10)
 )
 
-# Requête avec transformations multiples
-query = sales.select(
-    dk.col("date"),
-    dk.col("category").cast(dk.Enum(values=["Electronics", "Clothing", "Food"])).alias("category"),
-    dk.col("quantity"),
-    dk.col("price"),
-    dk.col("quantity").mul(dk.col("price")).alias("total_sales"),
-    dk.col("quantity").mul(dk.col("price")).rolling_sum(window=7).over(order_by=dk.col("date")).alias("rolling_7day_sales")
-).where(
-    dk.col("price").gt(10).add(dk.col("quantity").gt(5))
-)
-
-# Exécuter et afficher les résultats
+# Execute and display results
 result = query.execute()
 print(result)
 ```
 
-### Exemple 3 : Utilisation de toutes les colonnes
+### Example 3: Using All Columns
 
 ```python
 import ducktyped as dk
+from pathlib import Path
 
-# Créer une référence à une table
-customers = dk.Table(
-    filepath="customers.parquet",
-    schema={
-        "id": dk.Integer(),
-        "name": dk.Varchar(),
-        "email": dk.Varchar(),
-        "age": dk.Integer(),
-        "status": dk.Varchar(),
-    },
-)
+# Create a table reference
+customers = dk.TABLE("customers", Path("customers.parquet"))
 
-# Sélectionner toutes les colonnes
-query = customers.select(
+# Select all columns
+query = customers.SELECT(
     dk.all()
-).where(
-    dk.col("age").gte(18)
+).WHERE(
+    dk.col.age.gte(18)
 )
 
-# Sélectionner toutes les colonnes plus des colonnes dérivées
-query = customers.select(
+# Select all columns plus derived columns
+query = customers.SELECT(
     dk.all(),
-    dk.col("age").div(100).alias("age_century")
-).where(
-    dk.col("status").eq("active")
+    dk.col.age.div(100).alias("age_century")
+).WHERE(
+    dk.col.status.eq("active")
 )
 
-# Exécuter la requête
+# Execute query
 result = query.execute()
 print(result)
 ```
 
-## Fonctions disponibles
+### Example 4: IN Operation and Other Conditionals
 
-### Opérations arithmétiques
-- `.add()` - Addition
-- `.sub()` - Soustraction
-- `.mul()` - Multiplication
-- `.div()` - Division
+```python
+import ducktyped as dk
+from pathlib import Path
 
-### Comparaisons
-- `.eq()` - Égal à
-- `.neq()` - Différent de
-- `.gt()` - Supérieur à
-- `.lt()` - Inférieur à
-- `.gte()` - Supérieur ou égal à
-- `.lte()` - Inférieur ou égal à
+# Create a table reference
+stocks = dk.TABLE("stocks", Path("stocks.parquet"))
 
-### Fonctions mathématiques
-- `.sqrt()` - Racine carrée
-- `.abs()` - Valeur absolue
-- `.sign()` - Signe (-1, 0, 1)
-- `.clip(min_val, max_val)` - Limite les valeurs entre min et max
+# Query using IN operator and multiple conditions
+query = stocks.SELECT(
+    dk.col.date,
+    dk.col.ticker,
+    dk.col.close
+).WHERE(
+    dk.col.ticker.is_in("AAPL", "MSFT", "GOOG"),
+    dk.col.close.gt(100)
+)
 
-### Fenêtres glissantes
-- `.rolling_mean()` - Moyenne mobile
-- `.rolling_sum()` - Somme mobile
-- `.rolling_median()` - Médiane mobile
-- `.rolling_min()` - Minimum mobile
-- `.rolling_max()` - Maximum mobile
-- `.rolling_stddev()` - Écart-type mobile
-- `.rolling_kurtosis()` - Kurtosis mobile
-- `.rolling_skew()` - Asymétrie mobile
-
-### Types de données
-- `dk.Integer()` - Entier
-- `dk.Float()` - Nombre à virgule flottante
-- `dk.Varchar(length=None)` - Chaîne de caractères
-- `dk.Date()` - Date
-- `dk.Boolean()` - Booléen
-- `dk.Enum(values=[...])` - Énumération
-
-## Conclusion
-
-DuckTyped combine la puissance de DuckDB avec une API inspirée de Polars, offrant une expérience de développement fluide et intuitive. Que vous soyez familier avec Polars ou que vous cherchiez simplement un moyen élégant d'interagir avec DuckDB en Python, DuckTyped offre une solution expressive et flexible.
+# Execute query
+result = query.execute()
+print(result)
+```
