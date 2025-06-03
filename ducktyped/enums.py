@@ -40,13 +40,22 @@ class Operators(StrEnum):
 
 class Types(StrEnum):
     VARCHAR = "VARCHAR"
-    INTEGER = "INTEGER"
     FLOAT = "FLOAT"
+    DOUBLE = "DOUBLE"
     TIMESTAMP = "TIMESTAMP"
     BOOLEAN = "BOOLEAN"
     DECIMAL = "DECIMAL"
     DATE = "DATE"
+    TIME = "TIME"
     ENUM = "ENUM"
+    SMALLINT = "SMALLINT"
+    TINYINT = "TINYINT"
+    INTEGER = "INTEGER"
+    BIGINT = "BIGINT"
+    USMALLINT = "USMALLINT"
+    UTINYINT = "UTINYINT"
+    UINTEGER = "UINTEGER"
+    UBIGINT = "UBIGINT"
 
 
 class Functions(StrEnum):
