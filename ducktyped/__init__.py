@@ -1,4 +1,15 @@
-from ducktyped.main import Query, Table
+from ducktyped.cols import all, col
+from ducktyped.main import SELECT, Query, TABLE
 from ducktyped.types import Enum, Float, Integer, Varchar
-from ducktyped.cols import col, all
-__all__ = ["Table", "col", "Float", "Integer", "Varchar", "Query", "all", "Enum"]
+
+__all__ = [
+    "col",
+    "Float",
+    "Integer",
+    "Varchar",
+    "Query",
+    "all",
+    "Enum",
+    "SELECT",
+    "TABLE",
+]

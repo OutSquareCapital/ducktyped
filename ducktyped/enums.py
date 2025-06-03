@@ -2,15 +2,15 @@ from enum import StrEnum, auto
 
 
 class Context(StrEnum):
+    FROM = "FROM"
+    OVER = "OVER"
+    ORDER_BY = "ORDER BY"
     SELECT = "SELECT"
     WHERE = "WHERE"
     GROUP_BY = "GROUP BY"
 
 
 class KeyWord(StrEnum):
-    FROM = "FROM"
-    OVER = "OVER"
-    ORDER_BY = "ORDER BY"
     AND = "AND"
     CAST = "CAST"
     AS = "AS"
