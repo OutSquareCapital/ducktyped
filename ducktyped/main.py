@@ -7,6 +7,7 @@ from ducktyped.expressions import Expr, Col, AllExpr
 import duckdb
 import polars as pl
 
+
 def col(name: str) -> Col:
     return Col(name=name)
 
@@ -26,13 +27,17 @@ class Table:
 
 class Query:
     __slots__ = ("_table", "_selected", "_where_clause")
+
     def __init__(self, table: Table) -> None:
         self._table: Table = table
         self._selected: list[Expr] = []
         self._where_clause: list[Expr] = []
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}:\n({self.to_sql()})"
+        return f"{self.__class__.__name__}:\n({self.explain()})"
+
+    def _repr_html_(self) -> str:
+        return f"{self.__class__.__name__}:\n({self._explain_html()})"
 
     def select(self, *cols: Expr) -> Self:
         self._selected.extend(cols)
@@ -52,9 +57,29 @@ class Query:
         return f"{KeyWord.SELECT} {select_sql} {KeyWord.FROM} '{self._table.filepath}'{where_sql}"
 
     def execute(self) -> pl.DataFrame:
-        conn: duckdb.DuckDBPyConnection = duckdb.connect(database=self._table.filepath) # type: ignore[call-arg]
+        conn: duckdb.DuckDBPyConnection = duckdb.connect(database=self._table.filepath)  # type: ignore[call-arg]
         try:
             result: pl.DataFrame = conn.execute(query=self.to_sql()).pl()
             return result
         finally:
             conn.close()
+
+    def explain(self) -> str:
+        select_parts: list[str] = [col.to_sql() for col in self._selected]
+        select_sql: str = ",\n    ".join(select_parts)
+
+        query: str = f"{KeyWord.SELECT}\n    {select_sql}\n{KeyWord.FROM} '{self._table.filepath}'"
+
+        if self._where_clause:
+            where_conditions: list[str] = [cond.to_sql() for cond in self._where_clause]
+            where_sql: str = f"\n{KeyWord.WHERE}\n    " + f"\n    {KeyWord.AND} ".join(
+                where_conditions
+            )
+            query += where_sql
+
+        return query
+
+    def _explain_html(self) -> str:
+        lines: list[str] = self.explain().splitlines()
+        html_lines: list[str] = [f"<pre>{line}</pre>" for line in lines]
+        return "".join(html_lines)

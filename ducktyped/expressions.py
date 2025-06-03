@@ -1,39 +1,82 @@
 from dataclasses import dataclass
-from typing import Any, Self
+from typing import Any
 from ducktyped.enums import KeyWord, Operators, Functions
 from ducktyped.types import DuckType
+
+def _wrap_value(value: Any) -> "Expr":
+    if isinstance(value, Expr):
+        return value
+    return LiteralExpr(_value=value)
 
 
 class Expr:
     def to_sql(self) -> str:
         raise NotImplementedError()
 
+    def cast(self, type: DuckType) -> "CastExpr":
+        """Cast this expression to the specified type"""
+        return CastExpr(_expr=self, _target_type=type)
+    
+    def add(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(_left=self, _op=Operators.ADD, _right=_wrap_value(value=other))
+    
+    def sub(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(_left=self, _op=Operators.SUBTRACT, _right=_wrap_value(value=other))
+    
+    def mul(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(_left=self, _op=Operators.MULTIPLY, _right=_wrap_value(value=other))
+    
+    def div(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(_left=self, _op=Operators.DIVIDE, _right=_wrap_value(value=other))
+    
+    def gt(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(_left=self, _op=Operators.GT, _right=_wrap_value(value=other))
+    
+    def lt(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(_left=self, _op=Operators.LT, _right=_wrap_value(value=other))
+    
+    def gte(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(_left=self, _op=Operators.GTE, _right=_wrap_value(value=other))
+    
+    def lte(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(_left=self, _op=Operators.LTE, _right=_wrap_value(value=other))
+    
+    def eq(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(_left=self, _op=Operators.EQ, _right=_wrap_value(value=other))
+    
+    def neq(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
+        return BinaryOpExpr(_left=self, _op=Operators.NEQ, _right=_wrap_value(value=other))
+
+
 
 @dataclass(slots=True)
 class CastExpr(Expr):
-    expr: Expr
-    target_type: DuckType
+    _expr: Expr
+    _target_type: DuckType
 
     def to_sql(self) -> str:
-        return f"{KeyWord.CAST}({self.expr.to_sql()} {KeyWord.AS} {self.target_type.to_sql()})"
+        return f"{KeyWord.CAST}({self._expr.to_sql()} {KeyWord.AS} {self._target_type.to_sql()})"
 
 
 @dataclass(slots=True)
 class LiteralExpr(Expr):
-    value: Any
+    _value: Any
+
 
     def to_sql(self) -> str:
-        return str(self.value)
+        if isinstance(self._value, str):
+            return f"'{self._value}'"
+        return str(self._value)
 
 
 @dataclass(slots=True)
 class BinaryOpExpr(Expr):
-    left: Expr
-    op: Operators
-    right: Expr
+    _left: Expr
+    _op: Operators
+    _right: Expr
 
     def to_sql(self) -> str:
-        return f"({self.left.to_sql()} {self.op} {self.right.to_sql()})"
+        return f"({self._left.to_sql()} {self._op} {self._right.to_sql()})"
 
 
 @dataclass(slots=True)
@@ -42,17 +85,6 @@ class Col(Expr):
 
     def to_sql(self) -> str:
         return self.name
-
-    def add(self, other: Self | float | int) -> BinaryOpExpr:
-        return BinaryOpExpr(left=self, op=Operators.ADD, right=self._wrap(value=other))
-
-    def gt(self, other: Self | float | int) -> BinaryOpExpr:
-        return BinaryOpExpr(left=self, op=Operators.GT, right=self._wrap(value=other))
-
-    def _wrap(self, value: Self | float | int) -> Expr:
-        if isinstance(value, Col):
-            return value
-        return LiteralExpr(value=value)
 
     def rolling_mean(self, window: int) -> "RollingExprBuilder":
         return RollingExprBuilder(col=self, func=Functions.AVG, window=window)
@@ -77,10 +109,6 @@ class Col(Expr):
 
     def rolling_stddev(self, window: int) -> "RollingExprBuilder":
         return RollingExprBuilder(col=self, func=Functions.STDDEV_SAMP, window=window)
-
-    def cast(self, type: "DuckType") -> CastExpr:
-        return CastExpr(expr=self, target_type=type)
-
 
 @dataclass(slots=True)
 class AllExpr(Expr):
