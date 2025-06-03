@@ -1,20 +1,22 @@
 from pathlib import Path
 from typing import Self
+
 import duckdb
 import polars as pl
 
-from ducktyped.enums import KeyWord, Context
 from ducktyped.expressions import Expr
+from ducktyped.parsing import (
+    SQLRaw,
+    get_executable_query,
+    get_explained_query,
+    get_sql_raw,
+)
 
 
 class Query:
     __slots__ = ("_table", "_selected", "_where_clause", "_group_by", "_order_by")
 
-    def __init__(
-        self,
-        table: Path,
-        selected: list[Expr]
-    ) -> None:
+    def __init__(self, table: Path, selected: list[Expr]) -> None:
         self._table: Path = table
         self._selected: list[Expr] = selected
         self._where_clause: list[Expr] = []
@@ -46,25 +48,13 @@ class Query:
         return self
 
     def to_sql(self) -> str:
-        select_sql: str = ", ".join(col.to_sql() for col in self._selected)
-        where_sql: str = ""
-        if self._where_clause:
-            where_sql: str = f" {Context.WHERE} " + f" {KeyWord.AND} ".join(
-                cond.to_sql() for cond in self._where_clause
-            )
-        group_sql: str = ""
-        if self._group_by:
-            group_sql: str = f" {Context.GROUP_BY} " + ", ".join(
-                col.to_sql() for col in self._group_by
-            )
-        order_sql: str = ""
-        if self._order_by:
-            order_parts: list[str] = []
-            for expr, is_asc in self._order_by:
-                direction: KeyWord | KeyWord = KeyWord.ASC if is_asc else KeyWord.DESC
-                order_parts.append(f"{expr.to_sql()} {direction}")
-            order_sql: str = f" {Context.ORDER_BY} " + ", ".join(order_parts)
-        return f"{Context.SELECT} {select_sql} {Context.FROM} '{self._table}'{where_sql}{group_sql}{order_sql}"
+        sql_raw: SQLRaw = get_sql_raw(
+            selected=self._selected,
+            where_clause=self._where_clause,
+            group_by=self._group_by,
+            order_by=self._order_by,
+        )
+        return get_executable_query(table=str(self._table), sql_raw=sql_raw)
 
     def execute(self) -> pl.DataFrame:
         conn: duckdb.DuckDBPyConnection = duckdb.connect(database=self._table)  # type: ignore[call-arg]
@@ -74,32 +64,13 @@ class Query:
             conn.close()
 
     def explain(self) -> str:
-        select_parts: list[str] = [col.to_sql() for col in self._selected]
-        select_sql: str = ",\n    ".join(select_parts)
-
-        query: str = (
-            f"{Context.SELECT}\n    {select_sql}\n{Context.FROM} '{self._table}'"
+        sql_raw: SQLRaw = get_sql_raw(
+            selected=self._selected,
+            where_clause=self._where_clause,
+            group_by=self._group_by,
+            order_by=self._order_by,
         )
-
-        if self._where_clause:
-            where_conditions: list[str] = [cond.to_sql() for cond in self._where_clause]
-            where_sql: str = f"\n{Context.WHERE}\n    " + f"\n    {KeyWord.AND} ".join(
-                where_conditions
-            )
-            query += where_sql
-        if self._group_by:
-            group_parts: list[str] = [col.to_sql() for col in self._group_by]
-            group_sql: str = f"\n{Context.GROUP_BY}\n    " + ",\n    ".join(group_parts)
-            query += group_sql
-        if self._order_by:
-            order_parts: list[str] = []
-            for expr, is_asc in self._order_by:
-                direction: KeyWord | KeyWord = KeyWord.ASC if is_asc else KeyWord.DESC
-                order_parts.append(f"{expr.to_sql()} {direction}")
-            order_sql: str = f"\n{Context.ORDER_BY}\n    " + ",\n    ".join(order_parts)
-            query += order_sql
-
-        return query
+        return get_explained_query(sql_raw=sql_raw, table=str(self._table))
 
     def _explain_html(self) -> str:
         lines: list[str] = self.explain().splitlines()
