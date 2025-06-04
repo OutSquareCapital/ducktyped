@@ -101,20 +101,17 @@ class Query:
             self._order_by.append(((c), ascending))
         return self
 
-    def JOIN(
-        self,
-        table: TABLE,
-        on: Expr,
-        how: JoinTypes,
-    ) -> Self:
-        self._table_aliases[table.name] = table.name
+    def LEFT_JOIN(self, table: TABLE, on: Expr) -> Self:
+        return self._get_join(table=table, on=on, how="LEFT")
 
-        qualified_on: Expr = on
-        if isinstance(on, Col):
-            qualified_on = Col(_name=on.name, table=table.name)
+    def RIGHT_JOIN(self, table: TABLE, on: Expr) -> Self:
+        return self._get_join(table=table, on=on, how="RIGHT")
 
-        self._joins.append((table, qualified_on, how))
-        return self
+    def INNER_JOIN(self, table: TABLE, on: Expr) -> Self:
+        return self._get_join(table=table, on=on, how="INNER")
+
+    def FULL_JOIN(self, table: TABLE, on: Expr) -> Self:
+        return self._get_join(table=table, on=on, how="FULL")
 
     def _to_parser(self) -> SQLParser:
         return SQLParser(
@@ -137,3 +134,8 @@ class Query:
 
     def explain(self) -> str:
         return self._to_parser().get_explained_query(table=str(object=self._table.path))
+
+    def _get_join(self, table: TABLE, on: Expr, how: JoinTypes) -> Self:
+        self._table_aliases[table.name] = table.name
+        self._joins.append((table, on, how))
+        return self
