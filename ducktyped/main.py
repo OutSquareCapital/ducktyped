@@ -32,24 +32,22 @@ class TABLE:
     def __post_init__(self) -> None:
         self.name: str = self.path.stem
 
-    def SELECT(self, *cols: Col) -> "Query":
-        qualified_cols: list[Expr] = []
-        for col in cols:
-            if col.table is None:
-                qualified_cols.append(Col(name=col.name, table=self.name))
-            else:
-                qualified_cols.append(col)
-        return Query(table=self, selected=_selection(*cols))
+    def col(self, name: str) -> Col:
+        return Col(_name=name, table=self.name)
 
 
-class SELECT:
+class SelectBuilder:
     __slots__ = ("_selected",)
 
-    def __init__(self, *cols: Col) -> None:
+    def __init__(self, *cols: Col | Expr) -> None:
         self._selected: list[Expr] = _selection(*cols)
 
     def FROM(self, table: TABLE) -> "Query":
         return Query(table=table, selected=self._selected)
+
+
+def SELECT(*cols: Col | Expr) -> SelectBuilder:
+    return SelectBuilder(*cols)
 
 
 class Query:
@@ -76,44 +74,37 @@ class Query:
         return f"{self.__class__.__name__}:\n({self.explain()})"
 
     def _repr_html_(self) -> str:
-        return f"{self.__class__.__name__}:\n({self._explain_html()})"
-
-    def _qualify_expression(self, expr: Expr) -> Expr:
-        if isinstance(expr, Col) and expr.table is None:
-            expr = Col(name=expr.name, table=self._table.name)
-        return expr
-
-    def SELECT(self, *cols: Expr) -> Self:
-        self._selected.extend(self._qualify_expression(c) for c in cols)
-        return self
+        lines: list[str] = self.explain().splitlines()
+        html_lines: list[str] = [f"<pre>{line}</pre>" for line in lines]
+        return f"{self.__class__.__name__}:\n({''.join(html_lines)})"
 
     def WHERE(self, *cols: Expr) -> Self:
-        self._where_clause.extend(self._qualify_expression(c) for c in cols)
+        self._where_clause.extend((c) for c in cols)
         return self
 
     def GROUP_BY(self, *cols: Expr) -> Self:
         for c in cols:
-            self._group_by.append(self._qualify_expression(c))
+            self._group_by.append((c))
         return self
 
     def ORDER_BY(self, *cols: Expr, ascending: bool = True) -> Self:
         for c in cols:
-            self._order_by.append((self._qualify_expression(c), ascending))
+            self._order_by.append(((c), ascending))
         return self
 
     def JOIN(
         self,
         table: TABLE,
         on: Expr,
-        join_type: JoinTypes,
+        how: JoinTypes,
     ) -> Self:
         self._table_aliases[table.name] = table.name
 
         qualified_on: Expr = on
-        if isinstance(on, Col) and on.table is None:
-            qualified_on = Col(name=on.name, table=table.name)
+        if isinstance(on, Col):
+            qualified_on = Col(_name=on.name, table=table.name)
 
-        self._joins.append((table, qualified_on, join_type))
+        self._joins.append((table, qualified_on, how))
         return self
 
     def _to_sql(self) -> SQLRaw:
@@ -125,8 +116,8 @@ class Query:
             joins=self._joins,
         )
 
-    def execute(self) -> pl.DataFrame:
-        conn: duckdb.DuckDBPyConnection = duckdb.connect(database=self._table.path) # type: ignore[call-arg]
+    def execute_to_pl(self) -> pl.DataFrame:
+        conn: duckdb.DuckDBPyConnection = duckdb.connect(database=self._table.path)  # type: ignore[call-arg]
         try:
             query: str = get_executable_query(
                 table=str(object=self._table.path), sql_raw=self._to_sql()
@@ -135,10 +126,8 @@ class Query:
         finally:
             conn.close()
 
+    def execute_from_pl(self) -> str:
+        return get_executable_query(table="self", sql_raw=self._to_sql())
+
     def explain(self) -> str:
         return get_explained_query(sql_raw=self._to_sql(), table=str(self._table.path))
-
-    def _explain_html(self) -> str:
-        lines: list[str] = self.explain().splitlines()
-        html_lines: list[str] = [f"<pre>{line}</pre>" for line in lines]
-        return "".join(html_lines)

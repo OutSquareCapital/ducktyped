@@ -12,104 +12,146 @@ def _wrap_value(value: Any) -> "Expr":
 
 
 class Expr:
+    _name: str
+    table: str | None
+
+    @property
+    def name(self) -> str:
+        if self.table is None:
+            return self._name
+        return f"{self.table}.{self._name}"
+
     def to_sql(self) -> str:
         raise NotImplementedError()
 
     def alias(self, name: str) -> "AliasExpr":
-        return AliasExpr(_expr=self, _alias=name)
+        return AliasExpr(table=self.table, _expr=self, _alias=f"{name}")
 
     def cast(self, dtype: DuckType) -> "CastExpr":
-        return CastExpr(_expr=self, _dtype=dtype)
+        return CastExpr(table=self.table, _expr=self, _dtype=dtype)
 
     def add(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
         return BinaryOpExpr(
-            _left=self, _op=Operators.ADD, _right=_wrap_value(value=other)
+            table=self.table,
+            _left=self,
+            _op=Operators.ADD,
+            _right=_wrap_value(value=other),
         )
 
     def sub(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
         return BinaryOpExpr(
-            _left=self, _op=Operators.SUBTRACT, _right=_wrap_value(value=other)
+            table=self.table,
+            _left=self,
+            _op=Operators.SUBTRACT,
+            _right=_wrap_value(value=other),
         )
 
     def mul(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
         return BinaryOpExpr(
-            _left=self, _op=Operators.MULTIPLY, _right=_wrap_value(value=other)
+            table=self.table,
+            _left=self,
+            _op=Operators.MULTIPLY,
+            _right=_wrap_value(value=other),
         )
 
     def div(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
         return BinaryOpExpr(
-            _left=self, _op=Operators.DIVIDE, _right=_wrap_value(value=other)
+            table=self.table,
+            _left=self,
+            _op=Operators.DIVIDE,
+            _right=_wrap_value(value=other),
         )
 
     def gt(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
         return BinaryOpExpr(
-            _left=self, _op=Operators.GT, _right=_wrap_value(value=other)
+            table=self.table,
+            _left=self,
+            _op=Operators.GT,
+            _right=_wrap_value(value=other),
         )
 
     def lt(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
         return BinaryOpExpr(
-            _left=self, _op=Operators.LT, _right=_wrap_value(value=other)
+            table=self.table,
+            _left=self,
+            _op=Operators.LT,
+            _right=_wrap_value(value=other),
         )
 
     def gte(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
         return BinaryOpExpr(
-            _left=self, _op=Operators.GTE, _right=_wrap_value(value=other)
+            table=self.table,
+            _left=self,
+            _op=Operators.GTE,
+            _right=_wrap_value(value=other),
         )
 
     def lte(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
         return BinaryOpExpr(
-            _left=self, _op=Operators.LTE, _right=_wrap_value(value=other)
+            table=self.table,
+            _left=self,
+            _op=Operators.LTE,
+            _right=_wrap_value(value=other),
         )
 
     def eq(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
         return BinaryOpExpr(
-            _left=self, _op=Operators.EQ, _right=_wrap_value(value=other)
+            table=self.table,
+            _left=self,
+            _op=Operators.EQ,
+            _right=_wrap_value(value=other),
         )
 
     def neq(self, other: "Expr | float | int | str") -> "BinaryOpExpr":
         return BinaryOpExpr(
-            _left=self, _op=Operators.NEQ, _right=_wrap_value(value=other)
+            table=self.table,
+            _left=self,
+            _op=Operators.NEQ,
+            _right=_wrap_value(value=other),
         )
 
     def sqrt(self) -> "UnaryFuncExpr":
-        return UnaryFuncExpr(_func=Functions.SQRT, _expr=self)
+        return UnaryFuncExpr(table=self.table, _func=Functions.SQRT, _expr=self)
 
     def abs(self) -> "UnaryFuncExpr":
-        return UnaryFuncExpr(_func=Functions.ABS, _expr=self)
+        return UnaryFuncExpr(table=self.table, _func=Functions.ABS, _expr=self)
 
     def sign(self) -> "UnaryFuncExpr":
-        return UnaryFuncExpr(_func=Functions.SIGN, _expr=self)
+        return UnaryFuncExpr(table=self.table, _func=Functions.SIGN, _expr=self)
 
     def clip(self, min_val: int | float, max_val: int | float) -> "ClipExpr":
-        return ClipExpr(_expr=self, _min_val=min_val, _max_val=max_val)
+        return ClipExpr(
+            table=self.table, _expr=self, _min_val=min_val, _max_val=max_val
+        )
 
     def sum(self) -> "AggExpr":
-        return AggExpr(_func=Functions.SUM, _expr=self)
+        return AggExpr(table=self.table, _func=Functions.SUM, _expr=self)
 
     def mean(self) -> "AggExpr":
-        return AggExpr(_func=Functions.AVG, _expr=self)
+        return AggExpr(table=self.table, _func=Functions.AVG, _expr=self)
 
     def count(self) -> "AggExpr":
-        return AggExpr(_func=Functions.COUNT, _expr=self)
+        return AggExpr(table=self.table, _func=Functions.COUNT, _expr=self)
 
     def max(self) -> "AggExpr":
-        return AggExpr(_func=Functions.MAX, _expr=self)
+        return AggExpr(table=self.table, _func=Functions.MAX, _expr=self)
 
     def min(self) -> "AggExpr":
-        return AggExpr(_func=Functions.MIN, _expr=self)
+        return AggExpr(table=self.table, _func=Functions.MIN, _expr=self)
 
     def first(self) -> "AggExpr":
-        return AggExpr(_func=Functions.FIRST, _expr=self)
+        return AggExpr(table=self.table, _func=Functions.FIRST, _expr=self)
 
     def last(self) -> "AggExpr":
-        return AggExpr(_func=Functions.LAST, _expr=self)
+        return AggExpr(table=self.table, _func=Functions.LAST, _expr=self)
 
     def is_in(self, *values: Any) -> "InExpr":
-        return InExpr(_expr=self, _values=list(values))
-    
+        return InExpr(table=self.table, _expr=self, _values=list(values))
+
 
 @dataclass(slots=True)
 class AliasExpr(Expr):
+    table: str | None
     _expr: Expr
     _alias: str
 
@@ -119,6 +161,7 @@ class AliasExpr(Expr):
 
 @dataclass(slots=True)
 class CastExpr(Expr):
+    table: str | None
     _expr: Expr
     _dtype: DuckType
 
@@ -140,6 +183,7 @@ class LiteralExpr(Expr):
 
 @dataclass(slots=True)
 class UnaryFuncExpr(Expr):
+    table: str | None
     _func: str
     _expr: Expr
 
@@ -149,6 +193,7 @@ class UnaryFuncExpr(Expr):
 
 @dataclass(slots=True)
 class BinaryOpExpr(Expr):
+    table: str | None
     _left: Expr
     _op: Operators
     _right: Expr
@@ -159,6 +204,7 @@ class BinaryOpExpr(Expr):
 
 @dataclass(slots=True)
 class ClipExpr(Expr):
+    table: str | None
     _expr: Expr
     _min_val: float | int
     _max_val: float | int
@@ -177,14 +223,17 @@ class AllExpr(Expr):
 
 @dataclass(slots=True)
 class AggExpr(Expr):
+    table: str | None
     _func: str
     _expr: Expr
 
     def to_sql(self) -> str:
         return f"{self._func}({self._expr.to_sql()})"
 
+
 @dataclass(slots=True)
 class InExpr(Expr):
+    table: str | None
     _expr: Expr
     _values: list[Any]
 

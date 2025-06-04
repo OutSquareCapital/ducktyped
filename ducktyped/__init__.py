@@ -16,7 +16,6 @@ from ducktyped.types import (
 )
 
 __all__ = [
-    "col",
     "Float32",
     "Float64",
     "Int8",
@@ -34,4 +33,5 @@ __all__ = [
     "Int16",
     "Date",
     "Datetime",
+    "col",
 ]
