@@ -1,5 +1,5 @@
 from enum import StrEnum, auto
-
+from typing import Literal
 
 class Context(StrEnum):
     FROM = "FROM"
@@ -9,6 +9,7 @@ class Context(StrEnum):
     WHERE = "WHERE"
     GROUP_BY = "GROUP BY"
 
+JoinTypes = Literal["INNER", "LEFT", "RIGHT", "FULL"]
 
 class KeyWord(StrEnum):
     AND = "AND"
@@ -36,7 +37,6 @@ class Operators(StrEnum):
     LTE = "<="
     EQ = "="
     NEQ = "!="
-
 
 class Types(StrEnum):
     VARCHAR = "VARCHAR"
