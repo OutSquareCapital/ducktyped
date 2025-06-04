@@ -7,14 +7,8 @@ import polars as pl
 
 from ducktyped.cols import Col
 from ducktyped.enums import JoinTypes
-from ducktyped.expressions import Expr, AllExpr
-from ducktyped.parsing import (
-    SQLRaw,
-    TableProtocol,
-    get_executable_query,
-    get_explained_query,
-    get_sql_raw,
-)
+from ducktyped.expressions import AllExpr, Expr
+from ducktyped.parsing import SQLParser, TableProtocol
 
 
 class ColSelector:
@@ -122,8 +116,8 @@ class Query:
         self._joins.append((table, qualified_on, how))
         return self
 
-    def _to_sql(self) -> SQLRaw:
-        return get_sql_raw(
+    def _to_parser(self) -> SQLParser:
+        return SQLParser(
             selected=self._selected,
             where_clause=self._where_clause,
             group_by=self._group_by,
@@ -134,12 +128,12 @@ class Query:
     def execute_to_pl(self) -> pl.DataFrame:
         conn: duckdb.DuckDBPyConnection = duckdb.connect(database=self._table.path)  # type: ignore[call-arg]
         try:
-            query: str = get_executable_query(
-                table=str(object=self._table.path), sql_raw=self._to_sql()
+            query: str = self._to_parser().get_executable_query(
+                table=str(object=self._table.path)
             )
             return conn.execute(query=query).pl()
         finally:
             conn.close()
 
     def explain(self) -> str:
-        return get_explained_query(sql_raw=self._to_sql(), table=str(self._table.path))
+        return self._to_parser().get_explained_query(table=str(object=self._table.path))
