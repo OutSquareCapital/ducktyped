@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from ducktyped.enums import Functions, KeyWord, Context
-from ducktyped.expressions import Expr, AllExpr
+from ducktyped.expressions import Expr
 
 
 @dataclass(slots=True)
@@ -98,18 +98,3 @@ class RollingExprBuilder:
             window_size=self._window_size,
             order_by=cols,
         )
-
-
-class ColSelector:
-    def __call__(self, name: str) -> Col:
-        return Col(_name=name)
-
-    def __getattr__(self, name: str) -> Col:
-        return self(name)
-
-
-def all() -> AllExpr:
-    return AllExpr()
-
-
-col = ColSelector()

@@ -1,5 +1,4 @@
-from ducktyped.cols import all, col
-from ducktyped.main import SELECT, TABLE, Query
+from ducktyped.main import SELECT, TABLE, Query, all, col
 from ducktyped.types import (
     Date,
     Datetime,

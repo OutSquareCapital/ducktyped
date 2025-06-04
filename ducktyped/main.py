@@ -7,7 +7,7 @@ import polars as pl
 
 from ducktyped.cols import Col
 from ducktyped.enums import JoinTypes
-from ducktyped.expressions import Expr
+from ducktyped.expressions import Expr, AllExpr
 from ducktyped.parsing import (
     SQLRaw,
     TableProtocol,
@@ -15,6 +15,21 @@ from ducktyped.parsing import (
     get_explained_query,
     get_sql_raw,
 )
+
+
+class ColSelector:
+    def __call__(self, name: str) -> Col:
+        return Col(_name=name)
+
+    def __getattr__(self, name: str) -> Col:
+        return self(name)
+
+
+def all() -> AllExpr:
+    return AllExpr()
+
+
+col = ColSelector()
 
 
 def _selection(*cols: Col | Expr) -> list[Expr]:
