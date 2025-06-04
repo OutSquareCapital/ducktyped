@@ -14,11 +14,7 @@ class DuckType:
 
 @dataclass(slots=True)
 class String(DuckType):
-    length: int | None = None
-
     def __str__(self) -> str:
-        if self.length is not None:
-            return f"{Types.VARCHAR}({self.length})"
         return Types.VARCHAR
 
 

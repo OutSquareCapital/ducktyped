@@ -4,6 +4,7 @@ from typing import Literal
 class Context(StrEnum):
     FROM = "FROM"
     OVER = "OVER"
+    PARTITION_BY = "PARTITION BY"
     ORDER_BY = "ORDER BY"
     SELECT = "SELECT"
     WHERE = "WHERE"
