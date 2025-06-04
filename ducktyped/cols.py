@@ -5,8 +5,11 @@ from ducktyped.expressions import Expr, AllExpr
 @dataclass(slots=True)
 class Col(Expr):
     name: str
+    table: str | None = None
 
     def to_sql(self) -> str:
+        if self.table is not None and "." not in self.name:
+            return f"{self.table}.{self.name}"
         return self.name
 
     def rolling_mean(self, window_size: int) -> "RollingExprBuilder":
