@@ -141,8 +141,5 @@ class Query:
         finally:
             conn.close()
 
-    def execute_from_pl(self) -> str:
-        return get_executable_query(table="self", sql_raw=self._to_sql())
-
     def explain(self) -> str:
         return get_explained_query(sql_raw=self._to_sql(), table=str(self._table.path))
